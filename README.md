@@ -1,1 +1,0 @@
-# verasaha-architecture
