@@ -2,155 +2,72 @@
 
 Kurumsal seviyede çok kiracılı (multi-tenant) SaaS mimari vaka çalışması.
 
-Bu depo yalnızca **mimari ve operasyon dokümantasyonu** içerir.  
-Herhangi bir uygulama kodu, yapılandırma dosyası veya altyapı script’i içermez.
+---
 
-Bu repository, VeraSaha platformunun:
+## Bu repo ne / ne değil
 
-- Mimari tasarım kararlarını
-- Güvenlik ve izolasyon stratejisini
-- Trade-off analizlerini
-- Production işletim modelini
-- Reddedilen alternatifleri
-
-dokümante etmek amacıyla oluşturulmuştur.
+- **Bu repo:** Yalnızca mimari ve operasyon **dokümantasyonudur**. VeraSaha platformu için tasarım kararları, trade-off’lar, production sertleştirme, güvenlik duruşu ve gizlilik odaklı tasarım burada dokümante edilir. Uygulama kaynak kodu, yapılandırma dosyası veya altyapı script’i bulunmaz.
+- **Bu repo değildir:** Kod tabanı, demo uygulama veya hukuki/güvenlik sertifikası değildir. Sistem tasarımı için teknik portföy ve referans niteliğindedir.
 
 ---
 
-## 🎯 VeraSaha Nedir?
+## Host Topolojisi
 
-VeraSaha, saha operasyonları ve görüşme yönetimi için tasarlanmış çok kiracılı bir SaaS platformudur.
+| Host | Rol |
+|------|-----|
+| **verasaha.com** | Landing (Next.js); keşif ve giriş noktası. |
+| **app.verasaha.com** | Admin / panel (Angular). |
+| **api.verasaha.com** | Tek backend API; kiracı bağlamı `X-Tenant-Key` başlığı ile. |
+| **cdn.verasaha.com** | İmzalı URL (HMAC) ile dosya sunumu; anonim erişim yok. |
+| **{tenant}.verasaha.com** | Kiracıya özel UI host’ları (örn. firma.verasaha.com). |
+| **Mobile (Flutter)** | Çevrimdışı öncelikli senkron istemcisi. |
 
-Temel yetenekleri:
-
-- Çok kiracılı izolasyon (subdomain UX, API tarafında header tabanlı tenant çözümleme)
-- Offline-first mobil senkronizasyon (idempotent apply + delta changes modeli)
-- Güvenli dosya yükleme + kota yönetimi
-- CDN üzerinden imzalı URL ile güvenli dosya sunumu
-- Arka plan bildirim sistemi (Outbox pattern + worker)
-- Gözlemlenebilirlik (structured logging, metrics, tracing)
-- Reverse proxy + HTTPS production uyumluluğu
-
----
-
-## 🏗 Güncel Sistem Topolojisi
-
-- **verasaha.com** → Landing (Next.js) + root login/discovery
-- **{tenant}.verasaha.com** → Tenant UI host’ları
-- **app.verasaha.com** → Admin / Panel (Angular)
-- **api.verasaha.com** → Tek backend API (tenant bilgisi `X-Tenant-Key` ile taşınır)
-- **cdn.verasaha.com** → Dosya sunumu (imzalı URL doğrulamalı)
-- **Mobile (Flutter)** → Offline-first senkronizasyon modeli
-
-### Rezerve Subdomain’ler
-`www`, `api`, `admin`, `app`, `debug`, `test`
-
-### Reverse Proxy
-Nginx + Let's Encrypt (TLS sonlandırma ve yönlendirme)
+**Rezerve subdomain’ler:** `www`, `api`, `admin`, `app`, `debug`, `test`.  
+**Reverse proxy:** Nginx (veya NPM) + Let's Encrypt (TLS).
 
 ---
 
-## 🔐 Çok Kiracılı İzolasyon Garantileri
+## Temel Garantiler
 
-Sistem izolasyonu yalnızca uygulama kodu ile değil, mimari seviyede sağlanır.
-
-1. **API-Only Host Modeli**  
-   Tüm backend trafiği `api.verasaha.com` üzerinden akar.
-
-2. **Zorunlu Tenant Header**  
-   Korunan uç noktalarda `X-Tenant-Key` başlığı zorunludur.
-
-3. **Strict JWT Tenant Binding**  
-   JWT içindeki tenantId claim’i ile header’dan çözülen tenant eşleşmek zorundadır.  
-   - Claim yok → 401  
-   - Claim mismatch → 403  
-
-4. **EF Core Global Query Filter**  
-   Tüm tenant-scoped veriler otomatik filtrelenir.
-
-5. **Tenant-Scoped Inbox / Outbox Tabloları**  
-   SyncInbox ve NotificationOutbox tenant izolasyonu sağlar.
-
-6. **CDN İmzalı URL Modeli**  
-   Dosya erişimi tenantId + expiry + HMAC imzası ile doğrulanır.
-
-Cross-tenant veri erişimi yapısal olarak engellenmiştir.
+- **Katı kiracı izolasyonu:** EF Core global query filter’lar + kiracı kapsamında SyncInbox/NotificationOutbox; normal akışlarda çapraz kiracı veri yok.
+- **Katı JWT tenant bağlama:** Token `tenantId` ile `X-Tenant-Key` eşleşmek zorunda; eşleşmezse → 403.
+- **Rate limiting:** Auth (discover/login) IP bazlı; yazma trafiği kullanıcı veya tenant+IP bazlı; brute force ve kötüye kullanım azaltılır.
+- **Audit log + correlation:** Tüm mutasyonlar loglanır (kim, ne zaman, hangi varlık); her istekte CorrelationId ile izleme.
+- **Güvenli yüklemeler + kota:** Dosya türü whitelist, isteğe bağlı magic number kontrolü; kiracı depolama kotası (aşımda 409).
+- **Çevrimdışı senkron idempotency:** SyncInbox (TenantId, UserId, OpId) ile apply idempotent; yeniden denemeler güvenli.
+- **Outbox bildirimleri:** NotificationOutbox + worker; en az bir kez dağıtım, retry/backoff; istek yolunda senkron FCM yok.
 
 ---
 
-## 🧠 Mimari Yaklaşım
+## Dokümanları nasıl okursunuz
 
-### Onion Architecture
-Domain katmanı dış bağımlılık içermez.  
-Application katmanı use-case’leri orkestre eder.  
-Persistence ve Infrastructure katmanları implementasyon detaylarını içerir.
-
-### Domain Kuralları
-- Meeting aggregate immutability
-- Zorunlu değişiklik nedeni (change reason)
-- ParticipationType (Planned / Actual)
-- Devamsızlıkta AbsenceReason zorunluluğu
-
-### Offline-First Senkronizasyon
-- `/api/sync/changes`
-- `/api/sync/apply`
-- SyncInbox `(TenantId, UserId, OpId)`
-- UTC-only zaman disiplini
-- Tombstone modeli
-
-### Dosya Stratejisi
-- Whitelist + magic number sniffing
-- Tenant storage quota enforcement
-- API file streaming yok
-- CDN signed URL
-
-### Bildirim Stratejisi
-- Outbox pattern
-- Worker tabanlı dispatch
-- Retry / backoff / dead-letter
-- Development ortamında noop sender
+1. **Başlangıç:** [Mimari/Architecture_Summary/TR.md](Mimari/Architecture_Summary/TR.md) ile büyük resim.
+2. **Derinlemesine:** [Mimari/Architecture_Detailed/TR.md](Mimari/Architecture_Detailed/TR.md) ile gerekçe, trade-off’lar ve reddedilen alternatifler.
+3. **Güvenlik:** [Mimari/Security/Security_Architecture_TR.md](Mimari/Security/Security_Architecture_TR.md) ve [Mimari/Security/Threat_Model_TR.md](Mimari/Security/Threat_Model_TR.md).
+4. **KVKK / Gizlilik:** [Mimari/KVKK/KVKK_Summary_TR.md](Mimari/KVKK/KVKK_Summary_TR.md) ve [Mimari/KVKK/Data_Protection_Model_TR.md](Mimari/KVKK/Data_Protection_Model_TR.md).
+5. **Kararlar:** [Mimari/ADR/ADR_INDEX_TR.md](Mimari/ADR/ADR_INDEX_TR.md) ile Mimari Karar Kayıtları.
 
 ---
 
-## 📊 Gözlemlenebilirlik
+## Dokümantasyon (Mimari/ altında)
 
-- Structured logging (Serilog)
-- CorrelationId middleware
-- Sensitive data redaction
-- Prometheus metrics (`/metrics` korumalı)
-- `notifications.outbox.pending` gauge
-- OpenTelemetry tracing  
-  - Development: Console exporter  
-  - Production: OTLP exporter (config-driven)
+| Alan | Özet | Detay / Diğer |
+|------|------|----------------|
+| **Architecture** | [Architecture_Summary/TR.md](Mimari/Architecture_Summary/TR.md), [EN.md](Mimari/Architecture_Summary/EN.md) | [Architecture_Detailed/](Mimari/Architecture_Detailed/) |
+| **Security** | [Security_Architecture_TR.md](Mimari/Security/Security_Architecture_TR.md), [EN](Mimari/Security/Security_Architecture_EN.md) | [Threat_Model_TR.md](Mimari/Security/Threat_Model_TR.md), [EN](Mimari/Security/Threat_Model_EN.md) |
+| **KVKK / Privacy** | [KVKK_Summary_TR.md](Mimari/KVKK/KVKK_Summary_TR.md), [EN](Mimari/KVKK/KVKK_Summary_EN.md) | [Data_Protection_Model_TR.md](Mimari/KVKK/Data_Protection_Model_TR.md), [EN](Mimari/KVKK/Data_Protection_Model_EN.md) |
+| **ADR** | [ADR_INDEX_TR.md](Mimari/ADR/ADR_INDEX_TR.md), [EN](Mimari/ADR/ADR_INDEX_EN.md) | ADR-001 … ADR-007 tek tek |
 
----
-
-## ⚙️ Operasyonel Prensipler
-
-- Fail-fast JWT yapılandırması
-- Rate limiting (auth vs write partitioning)
-- Upload abuse ve kota kontrolü
-- AuditLog ile tüm mutasyonların kaydı
-- UTC zaman standardı
-- Loglarda secret bulunmaması
+Ayrıca: Mimari/Functional_*, Mimari/Operations_*, Mimari/Diagrams/, Mimari/Portfolio_OnePager_*.md.
 
 ---
 
-## 🎓 Bu Repository’nin Amacı
+## Mimari Katmanlar
 
-Bu repository:
-
-- Gerçek bir SaaS sisteminin mimari tasarımını göstermek
-- Çok kiracılı izolasyon stratejisini belgelemek
-- Enterprise-grade karar süreçlerini görünür kılmak
-- Teknik vaka çalışması sunmak
-
-için oluşturulmuştur.
-
-Bu bir demo proje değil; production odaklı bir mimari referanstır.
+Dokümantasyon şu alanlara ayrılır: **Architecture** (sistem tasarımı, topoloji, kalıplar), **Functional** (yetenekler, özellikler), **Operations** (dağıtım, gözlemlenebilirlik, production hazırlığı), **Security** (kimlik doğrulama, izolasyon, tehdit modeli), **KVKK / Privacy** (veri koruma, DSR farkındalığı), **ADR** (kayıtlı kararlar). Amaç: güvenlik, operasyonel olgunluk ve gizlilik odaklı tasarım ile production seviyesinde SaaS düşüncesini göstermek.
 
 ---
 
-## 👤 Yazar
+## Yazar
 
 Yücel ALTUNAY
