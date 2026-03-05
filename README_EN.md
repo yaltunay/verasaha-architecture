@@ -2,75 +2,72 @@
 
 Enterprise-grade multi-tenant SaaS architecture case study.
 
-This repository contains **architecture & operations documentation only** (no source code).  
-It documents the design decisions, trade-offs, and production hardening strategy of the VeraSaha platform.
+---
+
+## What this repo is / is not
+
+- **This repo is:** Architecture and operations **documentation only**. It documents design decisions, trade-offs, production hardening, security posture, and privacy-aware design for the VeraSaha platform. No application source code, config files, or infrastructure scripts are stored here.
+- **This repo is not:** A codebase, a demo app, or legal/security certification. It is a technical portfolio and reference for system design.
 
 ---
 
-## 🎯 What is VeraSaha?
+## Host Topology
 
-VeraSaha is a multi-tenant SaaS platform designed for field operations and meeting management, with:
+| Host | Role |
+|------|------|
+| **verasaha.com** | Landing (Next.js); discovery and login entry. |
+| **app.verasaha.com** | Admin / panel (Angular). |
+| **api.verasaha.com** | Single backend API; tenant context via `X-Tenant-Key` header. |
+| **cdn.verasaha.com** | File serving via signed URLs (HMAC); no anonymous access. |
+| **{tenant}.verasaha.com** | Tenant-specific UI hosts (e.g. firma.verasaha.com). |
+| **Mobile (Flutter)** | Offline-first sync client. |
 
-- Multi-tenant isolation (subdomain UX, header-based tenancy on API)
-- Offline-first mobile sync (idempotent apply + delta changes)
-- Secure uploads + quota enforcement
-- CDN-based secure file serving (signed URLs)
-- Background notifications (Outbox pattern + worker)
-- Observability (structured logs, metrics, tracing)
-- Reverse proxy + HTTPS production readiness
-
----
-
-## 🏗 Host Topology (Current)
-
-- **verasaha.com** → Landing (Next.js) + root login/discovery
-- **{tenant}.verasaha.com** → Tenant UI hosts
-- **app.verasaha.com** → Admin/Panel (Angular)
-- **api.verasaha.com** → Single backend API (tenant via `X-Tenant-Key`)
-- **cdn.verasaha.com** → File serving via signed URLs (HMAC)
-- **Mobile (Flutter)** → Offline-first sync
-
-**Reserved subdomains:** `www`, `api`, `admin`, `app`, `debug`, `test`  
-**Reverse proxy:** Nginx + Let's Encrypt
+**Reserved subdomains:** `www`, `api`, `admin`, `app`, `debug`, `test`.  
+**Reverse proxy:** Nginx (or NPM) + Let's Encrypt for TLS.
 
 ---
 
-## 🔐 Multi-Tenant Isolation (Guarantees)
+## Key Guarantees
 
-Isolation is enforced structurally:
-
-1. **API host model**: `api.verasaha.com`
-2. **Mandatory tenant header** on protected endpoints: `X-Tenant-Key`
-3. **Strict JWT tenant binding** (401/403 enforcement)
-4. **EF Core global query filters**
-5. **Tenant-scoped inbox/outbox tables** (idempotency + background processing)
-6. **CDN signed URLs** include tenant context and signature checks
-
----
-
-## 📁 Documentation
-
-All documents live under:
-
-Folders are bilingual (**TR/EN**) and split into summary vs detailed:
-
-- Architecture_Summary
-- Architecture_Detailed
-- Functional_Summary
-- Functional_Detailed
-- Operations_Summary
-- Operations_Detailed
+- **Strict tenant isolation:** EF Core global query filters + tenant-scoped SyncInbox/NotificationOutbox; no cross-tenant data in normal flows.
+- **Strict JWT tenant binding:** Token `tenantId` must match `X-Tenant-Key`; mismatch → 403.
+- **Rate limiting:** Auth (discover/login) IP-based; write traffic per user or tenant+IP; reduces brute force and abuse.
+- **Audit log + correlation:** All mutations logged (who, when, which entity); CorrelationId on every request for tracing.
+- **Secure uploads + quota:** File type whitelist, optional magic-number check; tenant storage quota enforced (409 on exceed).
+- **Offline sync idempotency:** SyncInbox (TenantId, UserId, OpId) ensures apply is idempotent; retries safe.
+- **Outbox notifications:** NotificationOutbox + worker; at-least-once dispatch, retry/backoff; no sync FCM in request path.
 
 ---
 
-## ✅ How to Use
+## How to read the docs
 
-- Read **Architecture_Summary** first for the big picture.
-- Use **Architecture_Detailed** for decision rationales and trade-offs.
-- Use **Operations_*** for production readiness and incident workflows.
+1. **Start here:** [Mimari/Architecture_Summary/EN.md](Mimari/Architecture_Summary/EN.md) for the big picture.
+2. **Deep dive:** [Mimari/Architecture_Detailed/EN.md](Mimari/Architecture_Detailed/EN.md) for rationale, trade-offs, and rejected alternatives.
+3. **Security:** [Mimari/Security/Security_Architecture_EN.md](Mimari/Security/Security_Architecture_EN.md) and [Mimari/Security/Threat_Model_EN.md](Mimari/Security/Threat_Model_EN.md).
+4. **Privacy / KVKK:** [Mimari/KVKK/KVKK_Summary_EN.md](Mimari/KVKK/KVKK_Summary_EN.md) and [Mimari/KVKK/Data_Protection_Model_EN.md](Mimari/KVKK/Data_Protection_Model_EN.md).
+5. **Decisions:** [Mimari/ADR/ADR_INDEX_EN.md](Mimari/ADR/ADR_INDEX_EN.md) for Architecture Decision Records.
 
 ---
 
-## 👤 Author
+## Documentation (under Mimari/)
+
+| Area | Summary | Detailed / Other |
+|------|---------|-------------------|
+| **Architecture** | [Architecture_Summary/EN.md](Mimari/Architecture_Summary/EN.md), [TR.md](Mimari/Architecture_Summary/TR.md) | [Architecture_Detailed/](Mimari/Architecture_Detailed/) |
+| **Security** | [Security_Architecture_EN.md](Mimari/Security/Security_Architecture_EN.md), [TR](Mimari/Security/Security_Architecture_TR.md) | [Threat_Model_EN.md](Mimari/Security/Threat_Model_EN.md), [TR](Mimari/Security/Threat_Model_TR.md) |
+| **KVKK / Privacy** | [KVKK_Summary_EN.md](Mimari/KVKK/KVKK_Summary_EN.md), [TR](Mimari/KVKK/KVKK_Summary_TR.md) | [Data_Protection_Model_EN.md](Mimari/KVKK/Data_Protection_Model_EN.md), [TR](Mimari/KVKK/Data_Protection_Model_TR.md) |
+| **ADR** | [ADR_INDEX_EN.md](Mimari/ADR/ADR_INDEX_EN.md), [TR](Mimari/ADR/ADR_INDEX_TR.md) | Individual ADR-001 … ADR-007 |
+
+Also: Mimari/Functional_*, Mimari/Operations_*, Mimari/Diagrams/, Mimari/Portfolio_OnePager_*.md.
+
+---
+
+## Architecture Layers
+
+The documentation is organized into: **Architecture** (system design, topology, patterns), **Functional** (capabilities, features), **Operations** (deployment, observability, production readiness), **Security** (auth, isolation, threat model), **KVKK / Privacy** (data protection, DSR awareness), and **ADR** (recorded decisions). These aim to show production-grade SaaS thinking with security, operational maturity, and privacy-aware design.
+
+---
+
+## Author
 
 Yücel ALTUNAY
