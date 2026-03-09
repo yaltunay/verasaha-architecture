@@ -25,6 +25,8 @@ Enterprise-grade multi-tenant SaaS architecture case study.
 **Reserved subdomains:** `www`, `api`, `admin`, `app`, `debug`, `test`.  
 **Reverse proxy:** Nginx (or NPM) + Let's Encrypt for TLS.
 
+The same web application can serve the landing domain, tenant subdomains, and approved custom domains. Tenant-specific behavior is resolved at runtime; it does not require separate builds.
+
 ---
 
 ## Key Guarantees

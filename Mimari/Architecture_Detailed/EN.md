@@ -100,7 +100,21 @@ Streaming file content through the API would create memory and CPU load; undesir
 
 ---
 
-## 8. Multi-Tenant Isolation Guarantees
+## 8. Custom Domain Support
+
+**Same web app / same image / same container:** A single web application can serve verasaha.com (landing), tenant subdomains (e.g. tenantA.verasaha.com), and approved custom domains (e.g. saha.firma.com). No separate frontend build or deployment per tenant is required; tenant-specific behavior is resolved at runtime from the host or from a bootstrap step.
+
+**Host role separation:** The web host is only the UX/access layer. The API is always api.verasaha.com; file serving is always cdn.verasaha.com. Custom domains do not change this; the frontend still calls api.verasaha.com with X-Tenant-Key for protected endpoints.
+
+**Tenant bootstrap:** For tenant subdomains, the tenant key is derived from the host or confirmed via bootstrap. For custom domains, the frontend must resolve host → tenant using a bootstrap mechanism (e.g. a public tenant-context endpoint or configuration). After bootstrap, the frontend sends X-Tenant-Key to api.verasaha.com for all protected API calls.
+
+**Reverse proxy / DNS contract:** Custom domains are onboarded by: (1) DNS pointing to the same reverse proxy / load balancer, (2) TLS certificate provisioning, (3) host mapping to the same web upstream. Custom domains are not separate app deployments.
+
+**Load balancer:** This model is compatible with horizontal scaling because tenant context is resolved at runtime from host/bootstrap, not from tenant-specific builds. No sticky session or per-tenant deployment is required.
+
+---
+
+## 9. Multi-Tenant Isolation Guarantees
 
 - All tenant-scoped data access is filtered by **TenantId**; EF Core global query filter and repository layer comply.
 - Sync changes/apply return or apply only the relevant tenant's data; JWT tenantId claim must match X-Tenant-Key.

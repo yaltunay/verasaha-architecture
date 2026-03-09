@@ -25,6 +25,8 @@ Kurumsal seviyede çok kiracılı (multi-tenant) SaaS mimari vaka çalışması.
 **Rezerve subdomain’ler:** `www`, `api`, `admin`, `app`, `debug`, `test`.  
 **Reverse proxy:** Nginx (veya NPM) + Let's Encrypt (TLS).
 
+Aynı web uygulaması landing domainini, tenant subdomainlerini ve onaylı özel domainleri sunabilir. Tenant davranışı çalışma anında çözülür; ayrı build gerektirmez.
+
 ---
 
 ## Temel Garantiler

@@ -100,7 +100,21 @@ Dosya içeriğinin API üzerinden akması bellek ve CPU yükü oluşturur; özel
 
 ---
 
-## 8. Çok Kiracılı İzolasyon Garantileri
+## 8. Özel Domain Desteği
+
+**Aynı web uygulaması / imaj / konteyner:** Tek bir web uygulaması verasaha.com (landing), tenant subdomain'leri (örn. tenantA.verasaha.com) ve onaylı özel domain'leri (örn. saha.firma.com) sunabilir. Kiracı başına ayrı frontend build veya dağıtım gerekmez; kiracıya özel davranış çalışma anında host veya bootstrap adımından çözülür.
+
+**Host rol ayrımı:** Web host yalnızca UX/erişim katmanıdır. API her zaman api.verasaha.com; dosya sunumu her zaman cdn.verasaha.com'dur. Özel domain'ler bunu değiştirmez; frontend korumalı uç noktalar için yine api.verasaha.com'a X-Tenant-Key ile istek atar.
+
+**Kiracı bootstrap:** Subdomain'lerde tenant anahtarı host'tan türetilir veya bootstrap ile doğrulanır. Özel domain'de frontend, host → tenant çözümlemesi için bootstrap mekanizması (örn. public tenant-context uç noktası veya yapılandırma) kullanmalıdır. Bootstrap sonrası frontend tüm korumalı API çağrılarında api.verasaha.com'a X-Tenant-Key gönderir.
+
+**Reverse proxy / DNS sözleşmesi:** Özel domain'ler şu şekilde devreye alınır: (1) DNS aynı reverse proxy/load balancer'a, (2) TLS sertifikası sağlanması, (3) host'un aynı web upstream'e eşlenmesi. Özel domain'ler ayrı uygulama dağıtımı değildir.
+
+**Load balancer:** Kiracı bağlamı çalışma anında host/bootstrap ile çözüldüğü için bu model yatay ölçekleme ile uyumludur; kiracıya özel build'den değil. Sticky session veya kiracı başına dağıtım gerekmez.
+
+---
+
+## 9. Çok Kiracılı İzolasyon Garantileri
 
 - Tüm tenant-scoped veri erişimi **TenantId** ile filtrelenir; EF Core global query filter ve repository katmanı buna uyar.
 - Sync changes/apply yalnızca ilgili tenant'ın verisini döner veya uygular; JWT tenantId claim'i ile X-Tenant-Key eşleşmesi zorunludur.
