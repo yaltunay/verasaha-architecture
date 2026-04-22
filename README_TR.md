@@ -20,7 +20,7 @@ Kurumsal seviyede çok kiracılı (multi-tenant) SaaS mimari vaka çalışması.
 | **api.verasaha.com** | Tek backend API; kiracı bağlamı `X-Tenant-Key` başlığı ile. |
 | **cdn.verasaha.com** | İmzalı URL (HMAC) ile dosya sunumu; anonim erişim yok. |
 | **{tenant}.verasaha.com** | Kiracıya özel UI host’ları (örn. firma.verasaha.com). |
-| **Mobile (Flutter)** | Çevrimdışı öncelikli senkron istemcisi. |
+| **Mobile (Flutter)** | PR-ready tenant mobile baseline (auth/role, meetings, settings); çevrimdışı senkron sonraki faz. |
 
 **Rezerve subdomain’ler:** `www`, `api`, `admin`, `app`, `debug`, `test`.  
 **Reverse proxy:** Nginx (veya NPM) + Let's Encrypt (TLS).
