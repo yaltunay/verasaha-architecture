@@ -20,7 +20,7 @@ Enterprise-grade multi-tenant SaaS architecture case study.
 | **api.verasaha.com** | Single backend API; tenant context via `X-Tenant-Key` header. |
 | **cdn.verasaha.com** | File serving via signed URLs (HMAC); no anonymous access. |
 | **{tenant}.verasaha.com** | Tenant-specific UI hosts (e.g. firma.verasaha.com). |
-| **Mobile (Flutter)** | Offline-first sync client. |
+| **Mobile (Flutter)** | PR-ready tenant mobile baseline (auth/role, meetings, settings); offline sync is a later phase. |
 
 **Reserved subdomains:** `www`, `api`, `admin`, `app`, `debug`, `test`.  
 **Reverse proxy:** Nginx (or NPM) + Let's Encrypt for TLS.
