@@ -17,7 +17,7 @@ flowchart TB
         end
 
         subgraph Application["Application"]
-            MediatR[MediatR / CQRS]
+            AppCqrs[Handlers & readers\nCQRS via DI]
             TenantMW[Tenant Middleware\nX-Tenant-Key, JWT]
             CorrMW[CorrelationId Middleware]
             RateLimit[Rate Limiter\nauth vs write]
@@ -40,19 +40,19 @@ flowchart TB
         end
     end
 
-    TenantMW --> MediatR
+    TenantMW --> AppCqrs
     CorrMW --> TenantMW
     RateLimit --> AuthC
-    AuthC --> MediatR
-    SyncC --> MediatR
-    FileC --> MediatR
-    ApiC --> MediatR
-    MediatR --> DomainModel
-    MediatR --> DbContext
-    MediatR --> SyncInbox
-    MediatR --> NotifOutbox
-    MediatR --> FileStore
-    MediatR --> Signing
+    AuthC --> AppCqrs
+    SyncC --> AppCqrs
+    FileC --> AppCqrs
+    ApiC --> AppCqrs
+    AppCqrs --> DomainModel
+    AppCqrs --> DbContext
+    AppCqrs --> SyncInbox
+    AppCqrs --> NotifOutbox
+    AppCqrs --> FileStore
+    AppCqrs --> Signing
     DbContext --> AuditLog
 ```
 
@@ -62,7 +62,7 @@ flowchart TB
 
 - **Presentation:** Auth (discover, login), Sync (changes, apply), File (upload, signed URL), API CRUD; all tenant-scoped where applicable.
 - **Middleware:** CorrelationId; Tenant resolution (X-Tenant-Key) and JWT tenant binding; rate limiting (auth vs write).
-- **Application:** MediatR/CQRS; use cases orchestrate domain and persistence.
+- **Application:** Explicit CQRS (command/query handlers and reader services) registered via dependency injection; use cases orchestrate domain and persistence.
 - **Domain:** Aggregates (e.g. Meeting); AuditLog via SaveChanges interceptor.
 - **Persistence:** DbContext with global TenantId filter; SyncInbox (idempotency); NotificationOutbox.
 - **Infrastructure:** File store (tenant paths); signed URL generation (HMAC, expiry) for CDN.

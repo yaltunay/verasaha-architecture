@@ -38,7 +38,7 @@ API tek host'ta (api.verasaha.com) sunulduğu için istek host'undan tenant çı
 
 ## 3. Çekirdek Mimari Kalıplar (Detay)
 
-**Onion Architecture:** Domain katmanı dış bağımlılık içermez; iş kuralları ve aggregate'ler burada. Application katmanı CQRS/MediatR ve arayüzler; veritabanı referansı yok. Infrastructure (dış servisler) ve Persistence (EF Core, DbContext) uygulama detaylarını içerir. Presentation (Web API) yalnızca HTTP uç noktalarıdır. Bu sayede test edilebilirlik ve değişim izolasyonu sağlanır.
+**Onion Architecture:** Domain katmanı dış bağımlılık içermez; iş kuralları ve aggregate'ler burada. Application katmanı paket içermeyen CQRS uygular: açık command/query handler'lar, reader servisleri ve arayüzler, bağımlılık enjeksiyonu ile kayıtlıdır; veritabanı referansı yok. Infrastructure (dış servisler) ve Persistence (EF Core, DbContext) uygulama detaylarını içerir. Presentation (Web API) yalnızca HTTP uç noktalarıdır. Bu sayede test edilebilirlik ve değişim izolasyonu sağlanır.
 
 **Meeting aggregate ve immutability:** Toplantı tamamlandıktan sonra belirli alanlar değiştirilemez; domain kuralları ile zorunlu değişiklik nedeni (reason) istenir. Bu, denetim izi ve veri bütünlüğü için tercih edilir.
 

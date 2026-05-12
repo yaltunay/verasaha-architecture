@@ -38,7 +38,7 @@ Because the API is served on a single host (api.verasaha.com), the tenant cannot
 
 ## 3. Core Architectural Patterns (Detail)
 
-**Onion Architecture:** The Domain layer has no external dependencies; business rules and aggregates live here. The Application layer uses CQRS/MediatR and interfaces; no database reference. Infrastructure (external services) and Persistence (EF Core, DbContext) contain application details. Presentation (Web API) is only HTTP endpoints. This enables testability and isolation of change.
+**Onion Architecture:** The Domain layer has no external dependencies; business rules and aggregates live here. The Application layer implements package-free CQRS: explicit command and query handlers, reader services, and interfaces, registered via dependency injection; no database reference. Infrastructure (external services) and Persistence (EF Core, DbContext) contain application details. Presentation (Web API) is only HTTP endpoints. This enables testability and isolation of change.
 
 **Meeting aggregate and immutability:** After a meeting is completed, certain fields cannot be changed; domain rules require a change reason. This supports audit trail and data integrity.
 
