@@ -73,6 +73,8 @@ Violating these invariants would compromise both security and KVKK-aligned data 
 - **Auth endpoints:** `POST /api/auth/discover` and `POST /api/auth/login` are AllowAnonymous; all other protected endpoints require JWT.
 - **Fail-fast:** Invalid JWT configuration (secret, issuer, audience) prevents application startup; misconfiguration in production is reduced.
 - **User and membership active state (demo):** Inactive `AppUser` is rejected at login and authenticated context paths (401, generic “Invalid credentials”). Inactive tenant membership (legacy `TenantUser` plus aligned `TenantMembership`/roles) blocks login, refresh, and usable tenant roles in context; SiteAdmin can still list/view/reactivate via `/api/siteadmin/*`. SiteAdmin user create and update must keep both membership schemas in sync.
+- **Meeting reschedule (demo):** `POST /api/meetings/{id}/reschedule` is **TenantAdmin** only; **TenantUser** receives 403. `changeReason` is required; tenant scoping is enforced; completed/cancelled meetings return 400 per domain rules.
+- **Meeting cancel (demo):** `POST /api/meetings/{id}/cancel` is **TenantAdmin** only; **TenantUser** receives 403. `cancellationReason` and `Idempotency-Key` are required; tenant isolation is enforced; post-cancel lifecycle writes (reschedule/complete) return 400.
 
 ---
 

@@ -73,6 +73,8 @@ Bu değişmezlerin ihlali hem güvenliği hem KVKK uyumlu veri işlemeyi zedeler
 - **Auth uç noktaları:** `POST /api/auth/discover`, `POST /api/auth/login` AllowAnonymous; diğer tüm korumalı uç noktalarda JWT zorunludur.
 - **Fail-fast:** JWT yapılandırması (secret, issuer, audience) hatalıysa uygulama başlamaz; production'da yanlış konfigürasyon riski azaltılır.
 - **Kullanıcı ve üyelik aktifliği (demo):** Pasif `AppUser` login ve `GetAuthenticatedUser` bağlamında reddedilir (401, genel “Invalid credentials” mesajı). Pasif kiracı üyeliği (legacy `TenantUser` ve hizalanmış `TenantMembership`/roller) login, refresh ve kiracı rol bağlamını engeller; SiteAdmin `/api/siteadmin/*` üzerinden pasif kullanıcı/üyeliği görüntüleyip yeniden etkinleştirebilir. SiteAdmin kullanıcı oluşturma ve güncellemesi her iki üyelik şemasını birlikte senkron tutmalıdır.
+- **Toplantı reschedule (demo):** `POST /api/meetings/{id}/reschedule` yalnızca **TenantAdmin** rolü ile çağrılabilir; **TenantUser** 403 alır. Zorunlu `changeReason` ve kiracı kapsamlı erişim korunur; tamamlanmış/iptal toplantılar domain kuralı ile 400 döner.
+- **Toplantı cancel (demo):** `POST /api/meetings/{id}/cancel` yalnızca **TenantAdmin**; **TenantUser** 403. Zorunlu `cancellationReason` ve `Idempotency-Key`; kiracı izolasyonu korunur; iptal sonrası lifecycle yazmaları (reschedule/complete) 400.
 
 ---
 
