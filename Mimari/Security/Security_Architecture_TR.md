@@ -72,7 +72,7 @@ Bu değişmezlerin ihlali hem güvenliği hem KVKK uyumlu veri işlemeyi zedeler
 - **401 / 403 ayrımı:** Kimlik yok veya tenant claim eksik → 401. Kimlik var ancak tenant uyuşmazlığı → 403.
 - **Auth uç noktaları:** `POST /api/auth/discover`, `POST /api/auth/login` AllowAnonymous; diğer tüm korumalı uç noktalarda JWT zorunludur.
 - **Fail-fast:** JWT yapılandırması (secret, issuer, audience) hatalıysa uygulama başlamaz; production'da yanlış konfigürasyon riski azaltılır.
-- **Kullanıcı ve üyelik aktifliği (demo):** Pasif `AppUser` login ve `GetAuthenticatedUser` bağlamında reddedilir (401, genel “Invalid credentials” mesajı). Pasif kiracı üyeliği (legacy `TenantUser` ve hizalanmış `TenantMembership`/roller) login, refresh ve kiracı rol bağlamını engeller; SiteAdmin `/api/siteadmin/*` üzerinden pasif kullanıcı/üyeliği görüntüleyip yeniden etkinleştirebilir. SiteAdmin kullanıcı güncellemesi her iki üyelik şemasını birlikte senkron tutmalıdır.
+- **Kullanıcı ve üyelik aktifliği (demo):** Pasif `AppUser` login ve `GetAuthenticatedUser` bağlamında reddedilir (401, genel “Invalid credentials” mesajı). Pasif kiracı üyeliği (legacy `TenantUser` ve hizalanmış `TenantMembership`/roller) login, refresh ve kiracı rol bağlamını engeller; SiteAdmin `/api/siteadmin/*` üzerinden pasif kullanıcı/üyeliği görüntüleyip yeniden etkinleştirebilir. SiteAdmin kullanıcı oluşturma ve güncellemesi her iki üyelik şemasını birlikte senkron tutmalıdır.
 
 ---
 

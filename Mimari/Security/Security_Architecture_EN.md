@@ -72,7 +72,7 @@ Violating these invariants would compromise both security and KVKK-aligned data 
 - **401 vs 403:** No identity or missing tenant claim → 401. Valid identity but tenant mismatch → 403.
 - **Auth endpoints:** `POST /api/auth/discover` and `POST /api/auth/login` are AllowAnonymous; all other protected endpoints require JWT.
 - **Fail-fast:** Invalid JWT configuration (secret, issuer, audience) prevents application startup; misconfiguration in production is reduced.
-- **User and membership active state (demo):** Inactive `AppUser` is rejected at login and authenticated context paths (401, generic “Invalid credentials”). Inactive tenant membership (legacy `TenantUser` plus aligned `TenantMembership`/roles) blocks login, refresh, and usable tenant roles in context; SiteAdmin can still list/view/reactivate via `/api/siteadmin/*`. SiteAdmin user updates must keep both membership schemas in sync.
+- **User and membership active state (demo):** Inactive `AppUser` is rejected at login and authenticated context paths (401, generic “Invalid credentials”). Inactive tenant membership (legacy `TenantUser` plus aligned `TenantMembership`/roles) blocks login, refresh, and usable tenant roles in context; SiteAdmin can still list/view/reactivate via `/api/siteadmin/*`. SiteAdmin user create and update must keep both membership schemas in sync.
 
 ---
 
