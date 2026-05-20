@@ -76,6 +76,7 @@ Violating these invariants would compromise both security and KVKK-aligned data 
 - **Meeting reschedule (demo):** `POST /api/meetings/{id}/reschedule` is **TenantAdmin** only; **TenantUser** receives 403. `changeReason` is required; tenant scoping is enforced; completed/cancelled meetings return 400 per domain rules.
 - **Meeting cancel (demo):** `POST /api/meetings/{id}/cancel` is **TenantAdmin** only; **TenantUser** receives 403. `cancellationReason` and `Idempotency-Key` are required; tenant isolation is enforced; post-cancel lifecycle writes (reschedule/complete) return 400.
 - **Meeting complete (demo):** `POST /api/meetings/{id}/complete` is **TenantAdmin** only; **TenantUser** receives 403. `Idempotency-Key` is required; tenant isolation is enforced; completed meetings reject reschedule/cancel and planned mutations with 400; replaying the same `Idempotency-Key` returns 200 safely.
+- **Met contacts / Actual participants (demo):** “Met contacts” are `MeetingParticipant` rows with `ParticipationType.Actual` (no separate entity). **TenantAdmin** may add/update/remove them for tenant-scoped meetings. **TenantUser** may mutate them only where the user already has participant-scoped meeting visibility (same rule as read: `UserId` match on a participant row); otherwise writes return **403**. Completed/cancelled meetings reject these mutations with **400** (lifecycle lock).
 
 ---
 
