@@ -76,6 +76,7 @@ Bu değişmezlerin ihlali hem güvenliği hem KVKK uyumlu veri işlemeyi zedeler
 - **Toplantı reschedule (demo):** `POST /api/meetings/{id}/reschedule` yalnızca **TenantAdmin** rolü ile çağrılabilir; **TenantUser** 403 alır. Zorunlu `changeReason` ve kiracı kapsamlı erişim korunur; tamamlanmış/iptal toplantılar domain kuralı ile 400 döner.
 - **Toplantı cancel (demo):** `POST /api/meetings/{id}/cancel` yalnızca **TenantAdmin**; **TenantUser** 403. Zorunlu `cancellationReason` ve `Idempotency-Key`; kiracı izolasyonu korunur; iptal sonrası lifecycle yazmaları (reschedule/complete) 400.
 - **Toplantı complete (demo):** `POST /api/meetings/{id}/complete` yalnızca **TenantAdmin**; **TenantUser** 403. Zorunlu `Idempotency-Key`; kiracı izolasyonu korunur; tamamlanmış toplantıda reschedule/cancel ve planlı mutasyonlar domain ile 400; aynı `Idempotency-Key` ile tekrar çağrı güvenli 200.
+- **Görüşülen kişiler / met contacts (demo):** `ParticipationType.Actual` olan `MeetingParticipant` kayıtlarıdır; TenantAdmin kiracı toplantılarında görüşülen ekle/güncelle/sil yapabilir. **TenantUser** yalnızca liste/detay için görünür atanmış olduğu toplantılarda (katılımcı satırında `UserId` eşleşmesi ile aynı okuma görünürlüğü) bu mutasyonlara izin verilir; atanmamış toplantılar için yazma → **403**. Tamamlanmış/iptal toplantılar → **400** (lifecycle kilidi).
 
 ---
 
