@@ -75,6 +75,7 @@ Violating these invariants would compromise both security and KVKK-aligned data 
 - **User and membership active state (demo):** Inactive `AppUser` is rejected at login and authenticated context paths (401, generic “Invalid credentials”). Inactive tenant membership (legacy `TenantUser` plus aligned `TenantMembership`/roles) blocks login, refresh, and usable tenant roles in context; SiteAdmin can still list/view/reactivate via `/api/siteadmin/*`. SiteAdmin user create and update must keep both membership schemas in sync.
 - **Meeting reschedule (demo):** `POST /api/meetings/{id}/reschedule` is **TenantAdmin** only; **TenantUser** receives 403. `changeReason` is required; tenant scoping is enforced; completed/cancelled meetings return 400 per domain rules.
 - **Meeting cancel (demo):** `POST /api/meetings/{id}/cancel` is **TenantAdmin** only; **TenantUser** receives 403. `cancellationReason` and `Idempotency-Key` are required; tenant isolation is enforced; post-cancel lifecycle writes (reschedule/complete) return 400.
+- **Meeting complete (demo):** `POST /api/meetings/{id}/complete` is **TenantAdmin** only; **TenantUser** receives 403. `Idempotency-Key` is required; tenant isolation is enforced; completed meetings reject reschedule/cancel and planned mutations with 400; replaying the same `Idempotency-Key` returns 200 safely.
 
 ---
 
